@@ -10,12 +10,14 @@ import { WeatherComponent } from './shared/components/weather/weather.component'
 import { RpsComponent } from './shared/components/rps/rps.component';
 import { GroceryComponent } from './shared/components/grocery/grocery.component';
 import { HomeComponent } from './shared/components/home/home.component';
+import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 
 
 @Component({
   selector: 'app-root',
   standalone: true,
   imports: [
+    FontAwesomeModule,
     RouterModule,
     RouterOutlet,
     RouterLink,
