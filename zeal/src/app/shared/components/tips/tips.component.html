@@ -1,37 +1,40 @@
 
 <div class="flex flex-col justify-center items-center h-screen">
+
   <h1 class="text-5xl mb-8 text-center">Tip Calculator</h1>
   <div class="flex mb-4">
     <span class="inline-flex items-center px-3 text-sm text-gray-900 bg-gray-200 border rounded-e-0 border-gray-300 border-e-0 rounded-s-md dark:bg-gray-600 dark:text-gray-400 dark:border-gray-600">
       <fa-icon [icon]="faDollarSign" class="text-gray-600"></fa-icon>
     </span>
-    <input type="number" id="total-bill" class="rounded-none rounded-e-lg bg-gray-50 border text-gray-900 focus:ring-blue-500 focus:border-blue-500 block flex-1 min-w-0 w-full text-sm border-gray-300 p-2.5  dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="Total Bill" [(ngModel)]="totalBill">
+    <input type="number" id="total-bill" class="rounded-none rounded-e-lg bg-gray-50 border text-gray-900 focus:ring-blue-500 focus:border-blue-500 block flex-1 min-w-0 w-full text-sm border-gray-300 p-2.5  dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="Total Bill" [(ngModel)]="totalBill" (ngModelChange)="calculateTipAmount(); calculateTotalBillAmount()">
   </div>
   <div class="flex items-center">
     <label for="steps-range" class="block mr-4 mb-2 text-sm font-medium text-gray-900 dark:text-white">Tip:</label>
     <input id="steps-range" type="range" min="0" max="100" value="2.5" step="0.5" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700" (input)="onTipChange($event)">
     <div class="ml-4 p-2 bg-gray-200 rounded-md dark:bg-gray-700 w-24 text-center">
-      <span class="text-gray-900 dark:text-white">{{ tipValue }}%</span>
+      <span class="text-gray-900 dark:text-white" (ngModelChange)="calculateTipAmount(); calculateTotalBillAmount()">{{ tipValue }}%</span>
     </div>
   </div>
 
     <hr class="w-1/4 mt-8 border-gray-300 mb-8">
     <h3 class="text-2xl text-center mb-4">Results</h3>
 
-       <div class="flex justify-center w-full mb-4">
-      <div class="w-1/4 rounded bg-gray-200 p-4 flex items-center">
-        <div class="w-20 text-right pr-4">Left Text</div>
-        <div class="h-8 border-r border-gray-400"></div>
-        <div class="pl-4">Right Text</div>
-      </div>
+
+ <div class="flex justify-center w-full mb-4">
+    <div class="w-1/4 rounded bg-gray-200 p-4 flex flex-col sm:flex-row items-center">
+      <div class="w-full text-center sm:text-right sm:pr-4 mb-2 sm:mb-0">Tip Amount</div>
+      <div class="sm:block sm:h-10 sm:border-r sm:border-gray-400 sm:mx-4"></div>
+      <div class="w-full text-center sm:text-left">{{ tipAmount | number: '1.2-2' }}</div>
     </div>
-    <div class="flex justify-center w-full">
-      <div class="w-1/4 rounded bg-gray-200 p-4 flex items-center">
-        <div class="w-20 text-right pr-4">Left Text</div>
-        <div class="h-8 border-r border-gray-400"></div>
-        <div class="pl-4">Right Text</div>
-      </div>
+  </div>
+  <div class="flex justify-center w-full">
+    <div class="w-1/4 rounded bg-gray-200 p-4 flex flex-col sm:flex-row items-center">
+      <div class="w-full text-center sm:text-right sm:pr-4 mb-2 sm:mb-0">Total Bill With Tip</div>
+      <div class="sm:block sm:h-10 sm:border-r sm:border-gray-400 sm:mx-4"></div>
+      <div class="w-full text-center sm:text-left">{{ totalBillAmount | number: '1.2-2' }}</div>
     </div>
+  </div>
 
 </div>
+
 
