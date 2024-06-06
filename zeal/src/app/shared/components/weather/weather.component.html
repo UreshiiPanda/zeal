@@ -1,1 +1,26 @@
-<p>weather works!</p>
+
+<div *ngIf="!showWeather" class="flex flex-col items-center justify-center min-h-screen">
+  <h1 class="text-4xl font-bold mb-8">Weather Dashboard</h1>
+  <div class="mb-8">
+    <label for="helper-text" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"></label>
+    <input type="email" id="helper-text" [(ngModel)]="zipCode" aria-describedby="helper-text-explanation" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="Zip Code">
+    <p id="helper-text-explanation" class="mt-2 text-sm text-gray-500 dark:text-gray-400">Enter a zip code to get the current weather</p>
+  </div>
+  <button (click)="getWeather()" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+    Get Weather
+  </button>
+</div>
+
+<div *ngIf="showWeather" class="flex flex-col items-center justify-center min-h-screen">
+  <h1 class="text-4xl font-bold mb-8">Weather Dashboard</h1>
+  <div class="space-y-4 mb-8">
+    <p>City: {{ weatherData.city }}</p>
+    <p>Current Temperature (Celsius): {{ weatherData.temp }}</p>
+    <p>Humidity: {{ weatherData.humidity }}</p>
+    <p>Conditions: {{ weatherData.conditions }}</p>
+  </div>
+  <button (click)="enterNewZipCode()" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+    Enter New Zip Code
+  </button>
+</div>
+
