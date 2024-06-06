@@ -10,7 +10,7 @@
   </div>
   <div class="flex items-center">
     <label for="steps-range" class="block mr-4 mb-2 text-sm font-medium text-gray-900 dark:text-white">Tip:</label>
-    <input id="steps-range" type="range" min="0" max="100" value="2.5" step="0.01" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700" (input)="onTipChange($event)">
+    <input id="steps-range" type="range" min="0" max="100" [value]="tipValue" step="0.01" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700" (input)="onTipChange($event)">
     <div class="ml-4 p-2 bg-gray-200 rounded-md dark:bg-gray-700 w-24 text-center">
       <span class="text-gray-900 dark:text-white" (ngModelChange)="calculateTipAmount(); calculateTotalBillAmount()">{{ tipValue }}%</span>
     </div>
