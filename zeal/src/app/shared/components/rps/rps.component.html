@@ -1,1 +1,28 @@
-<p>rps works!</p>
+
+<div class="flex items-center justify-center min-h-screen">
+    <div class="text-center">
+      <h1 class="text-4xl font-bold mb-8">Rock, Paper, Scissors</h1>
+      <p class="mb-8">Select either rock, paper, or scissors and see if you can beat the computer!</p>
+      <div class="flex justify-center space-x-8 mb-8">
+        <div>
+          <button class="text-white font-bold py-4 px-6 rounded-full mb-2">
+              <fa-icon [icon]="faGem" class="text-red-400" size="2x"></fa-icon>
+          </button>
+          <p class="text-lg">Rock</p>
+        </div>
+        <div>
+          <button class="text-white font-bold py-4 px-6 rounded-full mb-2">
+            <fa-icon [icon]="faPaperPlane" class="text-blue-400" size="2x"></fa-icon>
+          </button>
+          <p class="text-lg">Paper</p>
+        </div>
+        <div>
+          <button class="text-white font-bold py-4 px-6 rounded-full mb-2">
+              <fa-icon [icon]="faScissors" class="text-green-400" size="2x"></fa-icon>
+          </button>
+          <p class="text-lg">Scissors</p>
+        </div>
+      </div>
+    </div>
+</div>
+
