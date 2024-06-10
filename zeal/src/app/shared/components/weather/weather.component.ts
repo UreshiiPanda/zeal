@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DecimalPipe, NgIf } from '@angular/common';
 import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
+import { WeatherServiceComponent } from '../../services/weather_service/weather_service.component';
 
 
 
@@ -15,7 +16,7 @@ import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
     RouterOutlet,
     RouterLink,
     RouterLinkActive,
-
+    WeatherServiceComponent,
   ],
   templateUrl: './weather.component.html',
   styleUrl: './weather.component.css'
@@ -25,16 +26,20 @@ export class WeatherComponent {
 
   showWeather: boolean = false;
   zipCode: string = '';
-  weatherData: any = {
-    city: 'Dallas, TX 75201',
-    temp: '25°C',
-    humidity: '90',
-    conditions: 'Partly cloudy'
-  };
+  weatherData: any = {};
 
   getWeather() {
     // Perform weather API call based on the zipCode
     // Update the weatherData based on the API response
+
+    this.WeatherServiceComponent.getWeatherByZipCode(this.zipCode).subscribe(
+      data => {
+        this.weatherData = data;
+      },
+      error => {
+        console.error('Error fetching weather data:', error);
+      }
+    );
     this.showWeather = true;
   }
 
@@ -43,3 +48,4 @@ export class WeatherComponent {
     this.zipCode = '';
   }
 }
+
