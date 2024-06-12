@@ -1,3 +1,12 @@
+
+# C# Secrets/Keys
+appsettings.json
+
+# C# debug files
+*bin/
+*obj/
+*obj/debug
+
 # Logs
 logs
 *.log

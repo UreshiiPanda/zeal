@@ -28,21 +28,19 @@ export class WeatherComponent {
   zipCode: string = '';
   weatherData: any = {};
 
-  getWeather() {
-    // Perform weather API call based on the zipCode
-    // Update the weatherData based on the API response
+  constructor(private weatherService: WeatherServiceComponent) {}
 
-    this.WeatherServiceComponent.getWeatherByZipCode(this.zipCode).subscribe(
-      data => {
+  getWeather() {
+    this.weatherService.getWeatherByZipCode(this.zipCode).subscribe(
+      (data: any) => {
         this.weatherData = data;
+        this.showWeather = true;
       },
-      error => {
+      (error: any) => {
         console.error('Error fetching weather data:', error);
       }
     );
-    this.showWeather = true;
   }
-
   enterNewZipCode() {
     this.showWeather = false;
     this.zipCode = '';

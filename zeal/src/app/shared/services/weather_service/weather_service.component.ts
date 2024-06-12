@@ -17,12 +17,14 @@ import { Observable } from 'rxjs';
   styleUrl: './weather_service.component.css'
 })
 export class WeatherServiceComponent {
-  private apiUrl = 'http://localhost:5000/api/weather';
+  private apiUrl = 'http://localhost:5006/api/weather';
 
   constructor(private http: HttpClient) { }
 
   getWeatherByZipCode(zipCode: string): Observable<any> {
     const url = `${this.apiUrl}?zipCode=${zipCode}`;
+    console.log("Weather URL: ", url);
+    console.log("Data from URL: ", this.http.get(url));
     return this.http.get(url);
   }
 }
