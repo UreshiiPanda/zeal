@@ -10,7 +10,7 @@ public class WeatherController : ControllerBase
 {
     private readonly HttpClient _httpClient;
     //private const string WeatherApiKey = "WEATHER_API_KEY";
-    private const string WeatherApiBaseUrl = "http://api.openweathermap.org/geo/1.0/zip";
+    private const string WeatherApiBaseUrl = "https://api.openweathermap.org/data/2.5/weather";
     private const string CountryCode = "US"; // Set the country code to "US" for United States
     private readonly IConfiguration _configuration;
 
@@ -24,7 +24,7 @@ public class WeatherController : ControllerBase
     public async Task<IActionResult> Get(string zipCode)
     {
         string weatherApiKey = _configuration["WEATHER_API_KEY"];
-        string url = $"{WeatherApiBaseUrl}?zip={zipCode},{CountryCode}&appid={weatherApiKey}";
+        string url = $"{WeatherApiBaseUrl}?zip={zipCode},{CountryCode}&appid={weatherApiKey}&units=imperial";
 
         HttpResponseMessage response = await _httpClient.GetAsync(url);
 

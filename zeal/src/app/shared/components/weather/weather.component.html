@@ -14,10 +14,10 @@
 <div *ngIf="showWeather" class="flex flex-col items-center justify-center min-h-screen">
   <h1 class="text-4xl font-bold mb-8">Weather Dashboard</h1>
   <div class="space-y-4 mb-8">
-    <p>City: {{ weatherData.city }}</p>
-    <p>Current Temperature (Celsius): {{ weatherData.temp }}</p>
-    <p>Humidity: {{ weatherData.humidity }}</p>
-    <p>Conditions: {{ weatherData.conditions }}</p>
+    <p>City: {{ city }}</p>
+    <p>Current Temperature: {{ temp }}</p>
+    <p>Humidity: {{ humidity }}</p>
+    <p>Conditions: {{ desc }}</p>
   </div>
   <button (click)="enterNewZipCode()" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
     Enter New Zip Code
