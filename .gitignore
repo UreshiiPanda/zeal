@@ -1,6 +1,9 @@
 
-# MAc stuff
+# Mac stuff
 .DS_Store
+
+# Python stuff
+*.ipynb_checkpoints
 
 # C# Secrets/Keys
 *appsettings.json
