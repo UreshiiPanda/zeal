@@ -1,4 +1,7 @@
 
+# Ivy data stuff
+ivy/data/*
+
 # Mac stuff
 .DS_Store
 
