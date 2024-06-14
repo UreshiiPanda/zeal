@@ -1,7 +1,7 @@
 // rag-component.component.ts
 import { Component } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { DecimalPipe, NgIf, NgFor } from '@angular/common';
+import { DecimalPipe, NgIf, NgFor, NgClass } from '@angular/common';
 import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 
@@ -13,6 +13,7 @@ import { FormsModule } from '@angular/forms';
   imports: [
   NgIf,
   NgFor,
+  NgClass,
   DecimalPipe,
   FormsModule,
   RouterOutlet,
@@ -25,48 +26,28 @@ import { FormsModule } from '@angular/forms';
 export class RagComponent {
   query: string = '';
   results: string[] = [];
+  buttonClicked: boolean = false;
 
   constructor(private http: HttpClient) {}
 
-//  sendQuery() {
-//    this.http.post<any>('http://localhost:8000/query', { query: this.query })
-//      .subscribe(response => {
-//        this.results = response.results;
-//      });
-//  }
-//}
 
-sendQuery() {
-  const payload = { query: this.query };
-  this.http.post<any>('http://localhost:8000/query', payload)
-    .subscribe(
-      response => {
-        console.log(this.query);
-        this.results = response.results;
-      },
-      error => {
-        console.log(this.query);
-        console.error('Error:', error);
-        // Handle the error appropriately (e.g., display an error message to the user)
-      }
-    );
+  sendQuery() {
+    const payload = { query: this.query };
+    this.buttonClicked = true;
+    this.http.post<any>('http://localhost:8000/query', payload)
+      .subscribe(
+        response => {
+          console.log(this.query);
+          this.results = response.results;
+        },
+        error => {
+          console.log(this.query);
+          console.error('Error:', error);
+          // Handle the error appropriately (e.g., display an error message to the user)
+        }
+      );
+  }
 }
 
 
 
-
-//    sendQuery() {
-//      this.http.post<any>('http://localhost:8000/query', this.query, { headers: { 'Content-Type': 'application/json' } })
-//        .subscribe(
-//          response => {
-//            console.log(this.query);
-//            this.results = response.results;
-//          },
-//          error => {
-//            console.log(this.query);
-//            console.error('Error:', error);
-//            // Handle the error appropriately (e.g., display an error message to the user)
-//          }
-//        );
-//    }
-}

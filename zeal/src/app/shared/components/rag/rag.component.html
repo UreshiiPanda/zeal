@@ -1,6 +1,7 @@
-<!-- my-component.component.html -->
+
+
 <div class="flex flex-col items-center justify-center min-h-screen">
-  <div class="w-full max-w-md px-4">
+  <div [ngClass]="{'mt-24': buttonClicked}" class="w-full max-w-md px-4">
     <div class="mb-4">
       <input
         type="text"
@@ -17,11 +18,15 @@
         Send Query
       </button>
     </div>
-    <div *ngIf="results.length > 0" class="mt-8">
-      <h2 class="mb-4 text-xl font-bold">Results:</h2>
-      <ul>
-        <li *ngFor="let result of results" class="mb-2">{{ result }}</li>
-      </ul>
+  </div>
+  <div *ngIf="results.length > 0" class="w-full max-w-md px-4 mt-8">
+    <h2 class="mb-4 text-xl font-bold">Top 3 Results:</h2>
+    <div class="space-y-4">
+      <div *ngFor="let result of results" class="p-4 bg-gray-100 border border-gray-300 rounded-md">
+        {{ result }}
+      </div>
     </div>
   </div>
 </div>
+
+

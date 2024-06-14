@@ -34,6 +34,7 @@ import xml.etree.ElementTree as ET
 import base64
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from pinecone import Pinecone, PodSpec
 
 import uvicorn
 from fastapi import FastAPI, HTTPException
@@ -97,7 +98,6 @@ PINECONE_API_KEY = os.getenv('PINECONE_API_KEY')
 openai.api_key = os.getenv('OPENAI_API_KEY')
 
 
-# In[ ]:
 
 
 def num_tokens(text: str, model: str = 'gpt-4') -> int:
@@ -105,7 +105,6 @@ def num_tokens(text: str, model: str = 'gpt-4') -> int:
     return len(encoding.encode(text))
 
 
-# In[ ]:
 
 
 def read_txt(path):
@@ -113,14 +112,12 @@ def read_txt(path):
         return f.readlines()
 
 
-# In[ ]:
 
 
 def read_pdf(path):
     return extract_text(path).split('\n')
 
 
-# In[ ]:
 
 
 def read_docx(path):
@@ -128,7 +125,6 @@ def read_docx(path):
     return docx2txt.process(path).split('\n')
 
 
-# In[ ]:
 
 
 def read_pptx(path):
@@ -153,7 +149,6 @@ def read_pptx(path):
     return split
 
 
-# In[ ]:
 
 
 def read_xlsx(path):
@@ -174,7 +169,6 @@ def read_xlsx(path):
     return result
 
 
-# In[ ]:
 
 
 def read_png(path):
@@ -232,7 +226,6 @@ def read_png(path):
         return result.split('\n')
 
 
-# In[ ]:
 
 
 def collect_all_files(root_path):
@@ -244,7 +237,6 @@ def collect_all_files(root_path):
     return all_files
 
 
-# In[ ]:
 
 
 def get_range(s, delimiter = '.'):
@@ -252,7 +244,6 @@ def get_range(s, delimiter = '.'):
     return delimiter.join(parts[-1:])
 
 
-# In[ ]:
 
 
 messages = []
@@ -291,36 +282,23 @@ for file in files:
         messages.append('\n'.join(temp_string))
 
 
-# In[ ]:
 
 
 messages = [message for message in messages if len(message) > 0]
 
 
-# In[ ]:
 
 
 if not messages: 
-    # test out messages
+    # test out messages if you haven't pulled in any data
     messages = ["this is message 1", "this is message 2", "this is message 3", "this is message 4", "meow meow", "woof woof", "I am a cat"]
 
-# print(messages)
-# for i in range(len(messages)):
-#     print(len(messages[i]))
-#     print(messages[i])
-#     print(" \n###########################\n ")
 
 
-# In[ ]:
-
-
-from pinecone import Pinecone, PodSpec
 
 INDEX = 'idx'
 
-# pc = Pinecone(api_key=os.environ['PINECONE_API_KEY'])
 pc = Pinecone(api_key=os.getenv('PINECONE_API_KEY'))
-# print(f"{os.environ['PINECONE_API_KEY']}")
 
 if INDEX not in pc.list_indexes().names():
     pc.create_index(INDEX, dimension=1536, metric='cosine', spec=PodSpec(environment=ENV))
@@ -329,7 +307,6 @@ index = pc.Index(INDEX)
 print(index)
 
 
-# In[ ]:
 
 
 # calculate embeddings
@@ -349,8 +326,6 @@ for batch_start in range(0, len(messages), BATCH_SIZE):
 df = pd.DataFrame({'text': messages, 'embedding': embeddings})
 
 
-# In[ ]:
-
 
 print(index)
 batch_size = 32  # process everything in batches of 32
@@ -368,15 +343,12 @@ for i in tqdm(range(0, len(df['text']), batch_size)):
     index.upsert(vectors=list(to_upsert))
 
 
-# In[ ]:
-
 
 embeddings = df.to_dict()
 
 
-# In[ ]:
 
-# this is for trying it without Pinecone
+# this is for trying RAG without Pinecone
 def send_embeddings(query: str = '', embeddings: dict = {}, max_tokens: int = 1024) -> str:
     '''Return the max_tokens amount of related contexts based on the query string.
 
@@ -410,54 +382,9 @@ def send_embeddings(query: str = '', embeddings: dict = {}, max_tokens: int = 10
     return f'{text}'
 
 
-# In[ ]:
 
 
-#chatbox = ''
-#while chatbox != 'exit':
-#    chatbox = input()
-#    
-#    if chatbox == 'exit':
-#        continue
-#    
-#    index = "idx"
-#
-#    # client = OpenAI(api_key=os.environ['OPENAI_API_KEY'])
-#
-#    # STEP 1: Embed your prompt   (create an embedding from your prompt via OpenAI's embeddings)
-#    embedding = openai.Embedding.create(model=EMBEDDING_MODEL, input=chatbox).data[0].embedding
-#
-#    # STEP 2: Initialize pinecone index
-#    pc = Pinecone(api_key=os.environ['PINECONE_API_KEY'])
-#
-#    if index in pc.list_indexes().names():
-#        idx = pc.Index(index)
-#        result = idx.query(vector=[embedding], top_k=3, include_metadata=True)
-#        # replace() added for the newlines
-#        context = [x['metadata']['text'].replace('\n', '') for x in result['matches']]
-#
-#
-#        print(context) 
-
-
-
-
-#@app.post("/query")
-#async def query_endpoint(query):
-#    query = str(query)
-#    print('Received query:', query)
-#    # STEP 1: Embed your prompt
-#    embedding = openai.Embedding.create(model=EMBEDDING_MODEL, input=query).data[0].embedding
-#
-#    # STEP 2: Query Pinecone index
-#    result = index.query(vector=[embedding], top_k=3, include_metadata=True)
-#    context = [x['metadata']['text'].replace('\n', '') for x in result['matches']]
-#
-#    print(context)
-#    return {"results": context}
-
-
-
+##### FastAPI Post handler
 class QueryRequest(BaseModel):
     query: str
 
@@ -467,11 +394,6 @@ class QueryResponse(BaseModel):
 @app.post("/query", response_model=QueryResponse)
 def handle_query(request: QueryRequest):
     print(f"Received query: {request.query}")
-   # try:
-   #     results = process_query(request.query)
-   #     return QueryResponse(results=results)
-   # except Exception as e:
-   #     raise HTTPException(status_code=500, detail=str(e))
     try:
         # STEP 1: Embed your prompt
         embedding = openai.Embedding.create(model=EMBEDDING_MODEL, input=request.query).data[0].embedding
