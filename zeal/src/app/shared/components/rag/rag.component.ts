@@ -23,12 +23,14 @@ import { FormsModule } from '@angular/forms';
 })
 export class RagComponent {
   query: string = '';
-  results: string[] = [];
+  results_with_context: string[] = [];
+  results_without_context: string[] = [];
   buttonClicked: boolean = false;
   queryActive: boolean = false;
   similar_vectors: string = '';
   response_len: string = '';
   temp: string = '';
+  perspective: string = '';
 
   constructor(private http: HttpClient) {}
 
@@ -38,15 +40,18 @@ export class RagComponent {
       query: this.query,
       similar_vectors: this.similar_vectors,
       response_len: this.response_len,
-      temp: this.temp
+      temp: this.temp,
+      perspective: this.perspective
     };
     this.buttonClicked = true;
     this.http.post<any>('http://localhost:8000/query', payload)
       .subscribe(
         response => {
           console.log(this.query);
-          this.results = response.results;
-          console.log(this.results);
+          this.results_with_context = response.results[0];
+          this.results_without_context = response.results[1];
+          console.log(this.results_with_context);
+          console.log(this.results_without_context);
           this.queryActive = false;
         },
         error => {

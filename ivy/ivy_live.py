@@ -392,6 +392,7 @@ class QueryRequest(BaseModel):
     similar_vectors: str
     response_len: str
     temp: str
+    perspective: str
 
 class QueryResponse(BaseModel):
     results: list
@@ -402,11 +403,12 @@ def handle_query(request: QueryRequest):
     print(f"Received FastAPI num of vectors (top_k): {request.similar_vectors}\n\n")
     print(f"Received FastAPI max_tokens: {request.response_len}\n\n")
     print(f"Received FastAPI temp: {request.temp}\n\n")
+    print(f"Received FastAPI perspective: {request.perspective}\n\n")
     try:
-        # STEP 1: Embed your prompt
+# STEP 1: Embed your prompt
         embedding = openai.Embedding.create(model=EMBEDDING_MODEL, input=request.query).data[0].embedding
 
-        # STEP 2: Query Pinecone index
+# STEP 2: Query Pinecone index
         result = index.query(vector=[embedding], top_k=int(request.similar_vectors), include_metadata=True)
         context = [x['metadata']['text'].replace('\n', '') for x in result['matches']]
         # return {"results": context}
@@ -430,12 +432,12 @@ def handle_query(request: QueryRequest):
             i += 1
 
 
-        # STEP 3: Generate a response using the following pre-exisiting context from Pinecone
+# STEP 3: Generate a response using the following pre-exisiting context from Pinecone
         messages = [
             # This message sets the behavior and tone of the assistant. By specifying the role as system, it defines 
             # an instruction or guideline for the AI's behavior throughout the conversation. Here, it instructs the 
             # AI to act as a helpful assistant
-            {"role": "system", "content": "You are a helpful assistant."},
+            {"role": "system", "content": request.perspective},
             # this is what the user types into the chat
             {"role": "user", "content": request.query},
             # This message acts as a preamble for the context that will be provided next. It sets up the expectation 
@@ -460,12 +462,30 @@ def handle_query(request: QueryRequest):
             temperature=float(request.temp)
         )
 
-        
         # Extract and return the response text
         response_text = response.choices[0].message['content'].strip()
-        print(f"response:\n {response_text}\n\n")
+
+
+# STEP 4: Generate a response using only the request.query without context from Pinecone
+        messages_without_context = [
+            {"role": "system", "content": request.perspective},
+            {"role": "user", "content": request.query}
+        ]
+
+        response_without_context = openai.ChatCompletion.create(
+            model="gpt-4",
+            messages=messages_without_context,
+            max_tokens=int(request.response_len),
+            temperature=float(request.temp)
+        )
+
+        response_text_without_context = response_without_context.choices[0].message['content'].strip()
+
+        
+        print(f"response with context:\n {response_text}\n\n")
+        print(f"response w/o context:\n {response_text_without_context}\n\n")
         # fastAPI is expecting a list here so wrap the response_text in a list
-        return {"results": [response_text]}
+        return {"results": [[response_text],[response_text_without_context]]}
 
 
     except Exception as e:
