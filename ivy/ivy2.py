@@ -1,19 +1,20 @@
 #!/usr/bin/env python
 # coding: utf-8
 
+# In[1]:
 
 
 # pip install packages
-# get_ipython().run_line_magic('pip', 'uninstall openai --yes')
-# get_ipython().run_line_magic('pip', 'install openai==0.28')
-# get_ipython().run_line_magic('pip', 'install tiktoken')
-# get_ipython().run_line_magic('pip', 'install pdfminer')
-# get_ipython().run_line_magic('pip', 'install pdfminer.six')
-# get_ipython().run_line_magic('pip', 'install docx2txt')
-# get_ipython().run_line_magic('pip', 'install python-pptx')
-# # %pip install pinecone-client==2.2.4
-# get_ipython().run_line_magic('pip', 'install pinecone')
-# get_ipython().run_line_magic('pip', 'install pinecone-client --upgrade')
+get_ipython().run_line_magic('pip', 'uninstall openai --yes')
+get_ipython().run_line_magic('pip', 'install openai==0.28')
+get_ipython().run_line_magic('pip', 'install tiktoken')
+get_ipython().run_line_magic('pip', 'install pdfminer')
+get_ipython().run_line_magic('pip', 'install pdfminer.six')
+get_ipython().run_line_magic('pip', 'install docx2txt')
+get_ipython().run_line_magic('pip', 'install python-pptx')
+# %pip install pinecone-client==2.2.4
+get_ipython().run_line_magic('pip', 'install pinecone')
+get_ipython().run_line_magic('pip', 'install pinecone-client --upgrade')
 
 
 
@@ -32,29 +33,6 @@ from pptx import Presentation
 import zipfile
 import xml.etree.ElementTree as ET
 import base64
-from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-from pinecone import Pinecone, PodSpec
-
-import uvicorn
-from fastapi import FastAPI, HTTPException
-
-app = FastAPI()
-
-# Configure CORS
-origins = [
-    "http://localhost",
-    "http://localhost:4200",  # Replace with your Angular app's URL
-    "http://localhost:4200/rag",  # Replace with your Angular app's URL
-]
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
 
 
@@ -86,8 +64,10 @@ INDEX = 'idx'
     # Retrieving more tokens provides more context but also increases the response size and processing time
 
 
+# In[2]:
 
-# get_ipython().run_line_magic('pip', 'install python-dotenv')
+
+get_ipython().run_line_magic('pip', 'install python-dotenv')
 
 from dotenv import load_dotenv
 
@@ -100,6 +80,7 @@ PINECONE_API_KEY = os.getenv('PINECONE_API_KEY')
 openai.api_key = os.getenv('OPENAI_API_KEY')
 
 
+# In[3]:
 
 
 def num_tokens(text: str, model: str = 'gpt-4') -> int:
@@ -107,6 +88,7 @@ def num_tokens(text: str, model: str = 'gpt-4') -> int:
     return len(encoding.encode(text))
 
 
+# In[4]:
 
 
 def read_txt(path):
@@ -114,12 +96,14 @@ def read_txt(path):
         return f.readlines()
 
 
+# In[5]:
 
 
 def read_pdf(path):
     return extract_text(path).split('\n')
 
 
+# In[6]:
 
 
 def read_docx(path):
@@ -127,6 +111,7 @@ def read_docx(path):
     return docx2txt.process(path).split('\n')
 
 
+# In[7]:
 
 
 def read_pptx(path):
@@ -151,6 +136,7 @@ def read_pptx(path):
     return split
 
 
+# In[8]:
 
 
 def read_xlsx(path):
@@ -171,6 +157,7 @@ def read_xlsx(path):
     return result
 
 
+# In[9]:
 
 
 def read_png(path):
@@ -228,6 +215,7 @@ def read_png(path):
         return result.split('\n')
 
 
+# In[10]:
 
 
 def collect_all_files(root_path):
@@ -239,6 +227,7 @@ def collect_all_files(root_path):
     return all_files
 
 
+# In[11]:
 
 
 def get_range(s, delimiter = '.'):
@@ -246,6 +235,7 @@ def get_range(s, delimiter = '.'):
     return delimiter.join(parts[-1:])
 
 
+# In[12]:
 
 
 messages = []
@@ -284,23 +274,36 @@ for file in files:
         messages.append('\n'.join(temp_string))
 
 
+# In[13]:
 
 
 messages = [message for message in messages if len(message) > 0]
 
 
+# In[14]:
 
 
 if not messages: 
-    # test out messages if you haven't pulled in any data
+    # test out messages
     messages = ["this is message 1", "this is message 2", "this is message 3", "this is message 4", "meow meow", "woof woof", "I am a cat"]
 
+# print(messages)
+# for i in range(len(messages)):
+#     print(len(messages[i]))
+#     print(messages[i])
+#     print(" \n###########################\n ")
 
 
+# In[15]:
+
+
+from pinecone import Pinecone, PodSpec
 
 INDEX = 'idx'
 
+# pc = Pinecone(api_key=os.environ['PINECONE_API_KEY'])
 pc = Pinecone(api_key=os.getenv('PINECONE_API_KEY'))
+# print(f"{os.environ['PINECONE_API_KEY']}")
 
 if INDEX not in pc.list_indexes().names():
     pc.create_index(INDEX, dimension=1536, metric='cosine', spec=PodSpec(environment=ENV))
@@ -309,6 +312,7 @@ index = pc.Index(INDEX)
 print(index)
 
 
+# In[16]:
 
 
 # calculate embeddings
@@ -328,6 +332,8 @@ for batch_start in range(0, len(messages), BATCH_SIZE):
 df = pd.DataFrame({'text': messages, 'embedding': embeddings})
 
 
+# In[17]:
+
 
 print(index)
 batch_size = 32  # process everything in batches of 32
@@ -345,12 +351,15 @@ for i in tqdm(range(0, len(df['text']), batch_size)):
     index.upsert(vectors=list(to_upsert))
 
 
+# In[18]:
+
 
 embeddings = df.to_dict()
 
 
+# In[19]:
 
-# this is for trying RAG without Pinecone
+
 def send_embeddings(query: str = '', embeddings: dict = {}, max_tokens: int = 1024) -> str:
     '''Return the max_tokens amount of related contexts based on the query string.
 
@@ -384,100 +393,121 @@ def send_embeddings(query: str = '', embeddings: dict = {}, max_tokens: int = 10
     return f'{text}'
 
 
+# In[20]:
 
 
-##### FastAPI Post handler
-class QueryRequest(BaseModel):
-    query: str
-    similar_vectors: str
-    response_len: str
-    temp: str
+# chatbox = ''
+# while chatbox != 'exit':
+#     chatbox = input()
+    
+#     if chatbox == 'exit':
+#         continue
+    
+#     index = "idx"
 
-class QueryResponse(BaseModel):
-    results: list
+#     # client = OpenAI(api_key=os.environ['OPENAI_API_KEY'])
 
-@app.post("/query", response_model=QueryResponse)
-def handle_query(request: QueryRequest):
-    print(f"Received FastAPI request: {request.query}\n\n")
-    print(f"Received FastAPI num of vectors (top_k): {request.similar_vectors}\n\n")
-    print(f"Received FastAPI max_tokens: {request.response_len}\n\n")
-    print(f"Received FastAPI temp: {request.temp}\n\n")
-    try:
-        # STEP 1: Embed your prompt
-        embedding = openai.Embedding.create(model=EMBEDDING_MODEL, input=request.query).data[0].embedding
+#     # STEP 1: Embed your prompt   (create an embedding from your prompt via OpenAI's embeddings)
+#     embedding = openai.Embedding.create(model=EMBEDDING_MODEL, input=chatbox).data[0].embedding
 
-        # STEP 2: Query Pinecone index
-        result = index.query(vector=[embedding], top_k=int(request.similar_vectors), include_metadata=True)
+#     # STEP 2: Initialize pinecone index
+#     pc = Pinecone(api_key=os.environ['PINECONE_API_KEY'])
+
+#     if index in pc.list_indexes().names():
+#         idx = pc.Index(index)
+#         result = idx.query(vector=[embedding], top_k=3, include_metadata=True)
+#         # replace() added for the newlines
+#         context = [x['metadata']['text'].replace('\n', '') for x in result['matches']]
+
+
+#         print(context) 
+
+
+# In[31]:
+
+
+chatbox = ''
+while chatbox != 'exit':
+    chatbox = input()    
+    if chatbox == 'exit':
+        continue    
+    index = "idx"    
+    
+    # if using newer version of openAI import:    client = OpenAI(api_key=os.environ['OPENAI_API_KEY'])    
+    # STEP 1: Embed your prompt
+    embedding = openai.Embedding.create(model=EMBEDDING_MODEL, input=chatbox).data[0].embedding    
+
+    print("embedding generated successfully")
+    
+    # STEP 2: Initialize pinecone index
+    pc = Pinecone(api_key=os.environ['PINECONE_API_KEY'])    
+
+
+    ### increase top_k to increase the num of vectors used from PineCone (so top_k=3 would only use the top 3 similar vectors)
+    if index in pc.list_indexes().names():
+        idx = pc.Index(index)
+        result = idx.query(vector=[embedding], top_k=1024, include_metadata=True)
         context = [x['metadata']['text'].replace('\n', '') for x in result['matches']]
-        # return {"results": context}
+        #print(context)
 
 
-        # limit the num of max_tokens given to the chat completion bot to openAI's limit of 8192
-        # this just cuts off any text that goes beyond the limit, so we lose all of that context
-        # if your top_k is higher
-        max_tokens = 8192
-        text = ''
-        total_tokens = 0
-        max_tokens = min(num_tokens('\n'.join(context)) + total_tokens + 1, max_tokens + 1)
-        i = 0
+    # limit the num of max_tokens given to the chat completion bot to openAI's limit of 8192
+    # this just cuts off any text that goes beyond the limit, so we lose all of that context
+    max_tokens = 8192
+    text = ''
+    total_tokens = 0
+    max_tokens = min(num_tokens('\n'.join(context)) + total_tokens + 1, max_tokens + 1)
+    i = 0
 
-        for item in context:
-            nxt = f'\n{item}\n'
-            total_tokens += num_tokens(nxt)
-            if total_tokens > max_tokens:
-                break
-            text += nxt
-            i += 1
+    for item in context:
+        nxt = f'\n{item}\n'
+        total_tokens += num_tokens(nxt)
+        if total_tokens > max_tokens:
+            break
+        text += nxt
+        i += 1
 
+    # return f'{text}'
+    print(f"length of chunked text: {len(text)}")
 
-        # STEP 3: Generate a response using the following pre-exisiting context from Pinecone
-        messages = [
-            # This message sets the behavior and tone of the assistant. By specifying the role as system, it defines 
-            # an instruction or guideline for the AI's behavior throughout the conversation. Here, it instructs the 
-            # AI to act as a helpful assistant
-            {"role": "system", "content": "You are a helpful assistant."},
-            # this is what the user types into the chat
-            {"role": "user", "content": request.query},
-            # This message acts as a preamble for the context that will be provided next. It sets up the expectation 
-            # that the following content will be the context based on which the assistant should generate a response. 
-            # The role is assistant, which might be less common but can be used to shape the conversation dynamically
-            {"role": "assistant", "content": "Based on the following context:"},
-            # This message provides the actual context retrieved from Pinecone. The context variable is a list of text snippets.
-            # The " ".join(context) part concatenates all the text snippets into a single string, separated by spaces. 
-            # The role is system, indicating that this is background information or context for the assistant to use when generating a response.
-            {"role": "system", "content": " ".join(text)}
-        ]    
+    
 
+    # STEP 3: Generate a response using the following pre-exisiting context from Pinecone
+    messages = [
+        # This message sets the behavior and tone of the assistant. By specifying the role as system, it defines 
+        # an instruction or guideline for the AI's behavior throughout the conversation. Here, it instructs the 
+        # AI to act as a helpful assistant
+        {"role": "system", "content": "You are a helpful assistant."},
+        # this is what the user types into the chat
+        {"role": "user", "content": chatbox},
+        # This message acts as a preamble for the context that will be provided next. It sets up the expectation 
+        # that the following content will be the context based on which the assistant should generate a response. 
+        # The role is assistant, which might be less common but can be used to shape the conversation dynamically
+        {"role": "assistant", "content": "Based on the following context:"},
+        # This message provides the actual context retrieved from Pinecone. The context variable is a list of text snippets.
+        # The " ".join(context) part concatenates all the text snippets into a single string, separated by spaces. 
+        # The role is system, indicating that this is background information or context for the assistant to use when generating a response.
+        {"role": "system", "content": " ".join(text)}
+    ]    
 
-        # use chat completion for a human-friendly response
-        response = openai.ChatCompletion.create(
-            model="gpt-4",
-            messages=messages,
-            # more tokens means longer/more-detailed responses and VV
-            max_tokens=int(request.response_len),
-            # temp:  a value from 0 to 1
-            # more temp is a more subjective/creative/random response, less temp is more objective/direct/deterministic response
-            temperature=float(request.temp)
-        )
-
-        
-        # Extract and return the response text
-        response_text = response.choices[0].message['content'].strip()
-        print(f"response:\n {response_text}\n\n")
-        # fastAPI is expecting a list here so wrap the response_text in a list
-        return {"results": [response_text]}
-
-
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-
-if __name__ == "__main__":
-    # import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
-
-
-
-
+    # messages = [
+    #     {"role": "system", "content": "You are William Shakespeare. Keep sentences summarized to less than 20 words. If asked to explain, give full detail. Only respond using the context provided. Do not add any extra information. For any unrelated questions, tell the user to ask something about the context."},
+    #     {"role": "user", "content": chatbox},
+    #     {"role": "system", "content": " ".join(context)}
+    #     #{"role": "user", "content": chatbox},
+    # ]
+    
+    response = openai.ChatCompletion.create(
+        model="gpt-4o",
+        messages=messages,
+        # more tokens means longer/more-detailed responses and VV
+        # this is the num of tokens in the chat completion's response, but not the num of tokens input into the chatbot
+        max_tokens=1500,
+        # more temp is a more subjective/creative/random response, less temp is more objective/direct/deterministic response
+        temperature=0.2
+    )    
+    
+    # Extract and print the response text
+    response_text = response.choices[0].message['content'].strip()
+    print(f"\n\nWelcome to Costco, I love you:\n\n {response_text}")
 
