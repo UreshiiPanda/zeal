@@ -44,7 +44,7 @@ export class RagComponent {
       perspective: this.perspective
     };
     this.buttonClicked = true;
-    this.http.post<any>('http://localhost:8000/query', payload)
+    this.http.post<any>('http://localhost:8005/query', payload)
       .subscribe(
         response => {
           console.log(this.query);
