@@ -35,9 +35,15 @@ import base64
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from pinecone import Pinecone, PodSpec
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 
 import uvicorn
 from fastapi import FastAPI, HTTPException
+
+
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 
 app = FastAPI()
 
@@ -55,6 +61,13 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+
+#SQLALCHEMY_DATABASE_URL = "postgresql://username:password@host:port/database_name"
+SQLALCHEMY_DATABASE_URL = f"postgresql://{os.getenv('POSTGRES_USERNAME')}:{os.getenv('POSTGRES_PASSWORD')}@{os.getenv('POSTGRES_HOST')}:{os.getenv('POSTGRES_PORT')}/{os.getenv('POSTGRES_DB')}"
+engine = create_engine(SQLALCHEMY_DATABASE_URL)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
 
@@ -414,6 +427,24 @@ def handle_query(request: QueryRequest):
         # return {"results": context}
 
 
+
+# STEP 3: Query Postgres DB
+        def get_data_from_postgres(query):
+            with SessionLocal() as session:
+                # Perform the necessary database query based on the user's query
+                # Example:
+                # result = session.execute(f"SELECT * FROM mytable WHERE column LIKE '%{query}%'").fetchall()
+                # Customize the query based on your database schema and requirements
+                result = session.execute("SELECT * FROM mytable").fetchall()
+                return result
+
+        postgres_data = get_data_from_postgres(request.query)
+        postgres_context = [f"PostgreSQL Data: {row}" for row in postgres_data]
+        context.extend(postgres_context)
+
+
+
+
         # limit the num of max_tokens given to the chat completion bot to openAI's limit of 8192
         # this just cuts off any text that goes beyond the limit, so we lose all of that context
         # if your top_k is higher
@@ -496,7 +527,6 @@ def handle_query(request: QueryRequest):
 if __name__ == "__main__":
     # import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8005)
-
 
 
 
