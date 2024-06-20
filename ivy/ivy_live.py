@@ -40,6 +40,7 @@ from pinecone import Pinecone, PodSpec
 
 import uvicorn
 from fastapi import FastAPI, HTTPException
+import asyncio
 
 
 #from sqlalchemy import create_engine
@@ -410,120 +411,176 @@ class QueryRequest(BaseModel):
 class QueryResponse(BaseModel):
     results: list
 
-@app.post("/query", response_model=QueryResponse)
-def handle_query(request: QueryRequest):
-    print(f"Received FastAPI request: {request.query}\n\n")
-    print(f"Received FastAPI num of vectors (top_k): {request.similar_vectors}\n\n")
-    print(f"Received FastAPI max_tokens: {request.response_len}\n\n")
-    print(f"Received FastAPI temp: {request.temp}\n\n")
-    print(f"Received FastAPI perspective: {request.perspective}\n\n")
+#@app.post("/query", response_model=QueryResponse)
+#def handle_query(request: QueryRequest):
+#    print(f"Received FastAPI request: {request.query}\n\n")
+#    print(f"Received FastAPI num of vectors (top_k): {request.similar_vectors}\n\n")
+#    print(f"Received FastAPI max_tokens: {request.response_len}\n\n")
+#    print(f"Received FastAPI temp: {request.temp}\n\n")
+#    print(f"Received FastAPI perspective: {request.perspective}\n\n")
+#    try:
+## STEP 1: Embed your prompt
+#        embedding = openai.Embedding.create(model=EMBEDDING_MODEL, input=request.query).data[0].embedding
+#
+## STEP 2: Query Pinecone index
+#        result = index.query(vector=[embedding], top_k=int(request.similar_vectors), include_metadata=True)
+#        context = [x['metadata']['text'].replace('\n', '') for x in result['matches']]
+#        # return {"results": context}
+#
+#
+#
+## STEP 3: Query Postgres DB
+#       # def get_data_from_postgres(query):
+#       #     with SessionLocal() as session:
+#       #         # Perform the necessary database query based on the user's query
+#       #         # Example:
+#       #         # result = session.execute(f"SELECT * FROM mytable WHERE column LIKE '%{query}%'").fetchall()
+#       #         # Customize the query based on your database schema and requirements
+#       #         result = session.execute("SELECT * FROM mytable").fetchall()
+#       #         return result
+#
+#       # postgres_data = get_data_from_postgres(request.query)
+#       # postgres_context = [f"PostgreSQL Data: {row}" for row in postgres_data]
+#
+#       # # so now we can extend our Pinecone context with this Postgres context
+#       # # but then we need to trim it below so it doesn't go over the 8192 token limit
+#       # context.extend(postgres_context)
+#
+#
+#
+## STEP 4:  Limit the num of tokens to openAI's limit of 8192
+#        # limit the num of max_tokens given to the chat completion bot to openAI's limit of 8192
+#        # this just cuts off any text that goes beyond the limit, so we lose all of that context
+#        # if your top_k is higher
+#        max_tokens = 8192
+#        text = ''
+#        total_tokens = 0
+#        max_tokens = min(num_tokens('\n'.join(context)) + total_tokens + 1, max_tokens + 1)
+#        i = 0
+#
+#        for item in context:
+#            nxt = f'\n{item}\n'
+#            total_tokens += num_tokens(nxt)
+#            if total_tokens > max_tokens:
+#                break
+#            text += nxt
+#            i += 1
+#
+#
+## STEP 5: Generate a response using the following pre-exisiting context from Pinecone
+#        messages = [
+#            # This message sets the behavior and tone of the assistant. By specifying the role as system, it defines 
+#            # an instruction or guideline for the AI's behavior throughout the conversation. Here, it instructs the 
+#            # AI to act as a helpful assistant
+#            {"role": "system", "content": request.perspective},
+#            # this is what the user types into the chat
+#            {"role": "user", "content": request.query},
+#            # This message acts as a preamble for the context that will be provided next. It sets up the expectation 
+#            # that the following content will be the context based on which the assistant should generate a response. 
+#            # The role is assistant, which might be less common but can be used to shape the conversation dynamically
+#            {"role": "assistant", "content": "Based on the following context:"},
+#            # This message provides the actual context retrieved from Pinecone. The context variable is a list of text snippets.
+#            # The " ".join(context) part concatenates all the text snippets into a single string, separated by spaces. 
+#            # The role is system, indicating that this is background information or context for the assistant to use when generating a response.
+#            {"role": "system", "content": " ".join(text)}
+#        ]    
+#
+#
+#        # use chat completion for a human-friendly response
+#        response = openai.ChatCompletion.create(
+#            model="gpt-4",
+#            messages=messages,
+#            # more tokens means longer/more-detailed responses and VV
+#            max_tokens=int(request.response_len),
+#            # temp:  a value from 0 to 1
+#            # more temp is a more subjective/creative/random response, less temp is more objective/direct/deterministic response
+#            temperature=float(request.temp)
+#        )
+#
+#        # Extract and return the response text
+#        response_text = response.choices[0].message['content'].strip()
+#
+#
+## STEP 6: Generate a response using only the request.query without context from Pinecone
+#        messages_without_context = [
+#            {"role": "system", "content": request.perspective},
+#            {"role": "user", "content": request.query}
+#        ]
+#
+#        response_without_context = openai.ChatCompletion.create(
+#            model="gpt-4",
+#            messages=messages_without_context,
+#            max_tokens=int(request.response_len),
+#            temperature=float(request.temp)
+#        )
+#
+#        response_text_without_context = response_without_context.choices[0].message['content'].strip()
+#
+#        
+#        print(f"response with context:\n {response_text}\n\n")
+#        print(f"response w/o context:\n {response_text_without_context}\n\n")
+#        # fastAPI is expecting a list here so wrap the response_text in a list
+#        return {"results": [[response_text],[response_text_without_context]]}
+#
+#
+#    except Exception as e:
+#        raise HTTPException(status_code=500, detail=str(e))
+
+
+
+async def get_embedding(query: str):
+    response = await openai.Embedding.acreate(model=EMBEDDING_MODEL, input=query)
+    return response['data'][0]['embedding']
+
+async def query_pinecone(embedding, top_k: int):
+    return index.query(vector=embedding, top_k=top_k, include_metadata=True)
+
+async def get_chat_completion(messages, max_tokens: int, temperature: float):
+    return await openai.ChatCompletion.acreate(
+        model="gpt-3.5-turbo",
+        messages=messages,
+        max_tokens=max_tokens,
+        temperature=temperature
+    )
+
+@app.post("/query")
+async def handle_query(request: QueryRequest):
     try:
-# STEP 1: Embed your prompt
-        embedding = openai.Embedding.create(model=EMBEDDING_MODEL, input=request.query).data[0].embedding
-
-# STEP 2: Query Pinecone index
-        result = index.query(vector=[embedding], top_k=int(request.similar_vectors), include_metadata=True)
-        context = [x['metadata']['text'].replace('\n', '') for x in result['matches']]
-        # return {"results": context}
-
-
-
-# STEP 3: Query Postgres DB
-       # def get_data_from_postgres(query):
-       #     with SessionLocal() as session:
-       #         # Perform the necessary database query based on the user's query
-       #         # Example:
-       #         # result = session.execute(f"SELECT * FROM mytable WHERE column LIKE '%{query}%'").fetchall()
-       #         # Customize the query based on your database schema and requirements
-       #         result = session.execute("SELECT * FROM mytable").fetchall()
-       #         return result
-
-       # postgres_data = get_data_from_postgres(request.query)
-       # postgres_context = [f"PostgreSQL Data: {row}" for row in postgres_data]
-
-       # # so now we can extend our Pinecone context with this Postgres context
-       # # but then we need to trim it below so it doesn't go over the 8192 token limit
-       # context.extend(postgres_context)
-
-
-
-# STEP 4:  Limit the num of tokens to openAI's limit of 8192
-        # limit the num of max_tokens given to the chat completion bot to openAI's limit of 8192
-        # this just cuts off any text that goes beyond the limit, so we lose all of that context
-        # if your top_k is higher
-        max_tokens = 8192
-        text = ''
-        total_tokens = 0
-        max_tokens = min(num_tokens('\n'.join(context)) + total_tokens + 1, max_tokens + 1)
-        i = 0
-
-        for item in context:
-            nxt = f'\n{item}\n'
-            total_tokens += num_tokens(nxt)
-            if total_tokens > max_tokens:
-                break
-            text += nxt
-            i += 1
-
-
-# STEP 5: Generate a response using the following pre-exisiting context from Pinecone
-        messages = [
-            # This message sets the behavior and tone of the assistant. By specifying the role as system, it defines 
-            # an instruction or guideline for the AI's behavior throughout the conversation. Here, it instructs the 
-            # AI to act as a helpful assistant
+        embedding = await get_embedding(request.query)
+        pinecone_result = await query_pinecone(embedding, int(request.similar_vectors))
+        
+        context = [x['metadata']['text'].replace('\n', '') for x in pinecone_result['matches']]
+        context = context[:5]  # Limit to top 5 results
+        
+        messages_with_context = [
             {"role": "system", "content": request.perspective},
-            # this is what the user types into the chat
             {"role": "user", "content": request.query},
-            # This message acts as a preamble for the context that will be provided next. It sets up the expectation 
-            # that the following content will be the context based on which the assistant should generate a response. 
-            # The role is assistant, which might be less common but can be used to shape the conversation dynamically
             {"role": "assistant", "content": "Based on the following context:"},
-            # This message provides the actual context retrieved from Pinecone. The context variable is a list of text snippets.
-            # The " ".join(context) part concatenates all the text snippets into a single string, separated by spaces. 
-            # The role is system, indicating that this is background information or context for the assistant to use when generating a response.
-            {"role": "system", "content": " ".join(text)}
-        ]    
-
-
-        # use chat completion for a human-friendly response
-        response = openai.ChatCompletion.create(
-            model="gpt-4",
-            messages=messages,
-            # more tokens means longer/more-detailed responses and VV
-            max_tokens=int(request.response_len),
-            # temp:  a value from 0 to 1
-            # more temp is a more subjective/creative/random response, less temp is more objective/direct/deterministic response
-            temperature=float(request.temp)
-        )
-
-        # Extract and return the response text
-        response_text = response.choices[0].message['content'].strip()
-
-
-# STEP 6: Generate a response using only the request.query without context from Pinecone
+            {"role": "system", "content": " ".join(context)}
+        ]
+        
         messages_without_context = [
             {"role": "system", "content": request.perspective},
             {"role": "user", "content": request.query}
         ]
-
-        response_without_context = openai.ChatCompletion.create(
-            model="gpt-4",
-            messages=messages_without_context,
-            max_tokens=int(request.response_len),
-            temperature=float(request.temp)
-        )
-
-        response_text_without_context = response_without_context.choices[0].message['content'].strip()
-
         
-        print(f"response with context:\n {response_text}\n\n")
-        print(f"response w/o context:\n {response_text_without_context}\n\n")
-        # fastAPI is expecting a list here so wrap the response_text in a list
-        return {"results": [[response_text],[response_text_without_context]]}
-
-
+        response_with_context, response_without_context = await asyncio.gather(
+            get_chat_completion(messages_with_context, int(request.response_len), float(request.temp)),
+            get_chat_completion(messages_without_context, int(request.response_len), float(request.temp))
+        )
+        
+        return {
+            "results": [
+                [response_with_context.choices[0].message['content'].strip()],
+                [response_without_context.choices[0].message['content'].strip()]
+            ]
+        }
+    
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+
 
 
 
