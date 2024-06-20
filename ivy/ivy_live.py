@@ -429,22 +429,25 @@ def handle_query(request: QueryRequest):
 
 
 # STEP 3: Query Postgres DB
-        def get_data_from_postgres(query):
-            with SessionLocal() as session:
-                # Perform the necessary database query based on the user's query
-                # Example:
-                # result = session.execute(f"SELECT * FROM mytable WHERE column LIKE '%{query}%'").fetchall()
-                # Customize the query based on your database schema and requirements
-                result = session.execute("SELECT * FROM mytable").fetchall()
-                return result
+       # def get_data_from_postgres(query):
+       #     with SessionLocal() as session:
+       #         # Perform the necessary database query based on the user's query
+       #         # Example:
+       #         # result = session.execute(f"SELECT * FROM mytable WHERE column LIKE '%{query}%'").fetchall()
+       #         # Customize the query based on your database schema and requirements
+       #         result = session.execute("SELECT * FROM mytable").fetchall()
+       #         return result
 
-        postgres_data = get_data_from_postgres(request.query)
-        postgres_context = [f"PostgreSQL Data: {row}" for row in postgres_data]
-        context.extend(postgres_context)
+       # postgres_data = get_data_from_postgres(request.query)
+       # postgres_context = [f"PostgreSQL Data: {row}" for row in postgres_data]
+
+       # # so now we can extend our Pinecone context with this Postgres context
+       # # but then we need to trim it below so it doesn't go over the 8192 token limit
+       # context.extend(postgres_context)
 
 
 
-
+# STEP 4:  Limit the num of tokens to openAI's limit of 8192
         # limit the num of max_tokens given to the chat completion bot to openAI's limit of 8192
         # this just cuts off any text that goes beyond the limit, so we lose all of that context
         # if your top_k is higher
@@ -463,7 +466,7 @@ def handle_query(request: QueryRequest):
             i += 1
 
 
-# STEP 3: Generate a response using the following pre-exisiting context from Pinecone
+# STEP 5: Generate a response using the following pre-exisiting context from Pinecone
         messages = [
             # This message sets the behavior and tone of the assistant. By specifying the role as system, it defines 
             # an instruction or guideline for the AI's behavior throughout the conversation. Here, it instructs the 
@@ -497,7 +500,7 @@ def handle_query(request: QueryRequest):
         response_text = response.choices[0].message['content'].strip()
 
 
-# STEP 4: Generate a response using only the request.query without context from Pinecone
+# STEP 6: Generate a response using only the request.query without context from Pinecone
         messages_without_context = [
             {"role": "system", "content": request.perspective},
             {"role": "user", "content": request.query}
