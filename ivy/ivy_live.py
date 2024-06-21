@@ -66,10 +66,9 @@ app.add_middleware(
 
 
 #SQLALCHEMY_DATABASE_URL = "postgresql://username:password@host:port/database_name"
-#SQLALCHEMY_DATABASE_URL = f"postgresql://{os.getenv('POSTGRES_USERNAME')}:{os.getenv('POSTGRES_PASSWORD')}@{os.getenv('POSTGRES_HOST')}:{os.getenv('POSTGRES_PORT')}/{os.getenv('POSTGRES_DB')}"
-#engine = create_engine(SQLALCHEMY_DATABASE_URL)
-#SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
+SQLALCHEMY_DATABASE_URL = f"postgresql://{os.getenv('POSTGRES_USERNAME')}:{os.getenv('POSTGRES_PASSWORD')}@{os.getenv('POSTGRES_HOST')}:{os.getenv('POSTGRES_PORT')}/{os.getenv('POSTGRES_DB')}"
+engine = create_engine(SQLALCHEMY_DATABASE_URL)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
 # constants
@@ -543,6 +542,14 @@ async def get_chat_completion(messages, max_tokens: int, temperature: float):
         temperature=temperature
     )
 
+
+async def get_data_from_postgres(query: str):
+    async with SessionLocal() as session:
+        # This is a placeholder query. Adjust it based on your database schema and requirements
+        result = await session.execute(f"SELECT * FROM your_table WHERE your_column LIKE '%{query}%'")
+        return result.fetchall()
+
+
 @app.post("/query")
 async def handle_query(request: QueryRequest):
     try:
@@ -552,11 +559,34 @@ async def handle_query(request: QueryRequest):
         context = [x['metadata']['text'].replace('\n', '') for x in pinecone_result['matches']]
         context = context[:5]  # Limit to top 5 results
         
+        # Query PostgreSQL
+        postgres_data = await get_data_from_postgres(request.query)
+        postgres_context = [f"PostgreSQL Data: {row}" for row in postgres_data]
+        
+        # Combine Pinecone and PostgreSQL contexts
+        # context.extend(postgres_context)
+        combined_context = context + postgres_context
+    
+        # make sure the total num of tokens doesn't go over openAI's limit of 8192
+        max_tokens = 8192
+        total_tokens = 0
+        final_context = []
+
+        for item in combined_context:
+            nxt = f'\n{item}\n'
+            if total_tokens + num_tokens(nxt) > max_tokens:
+                break
+            final_context.append(item)
+            total_tokens += num_tokens(nxt)
+
+        combined_context = final_context
+
+
         messages_with_context = [
             {"role": "system", "content": request.perspective},
             {"role": "user", "content": request.query},
             {"role": "assistant", "content": "Based on the following context:"},
-            {"role": "system", "content": " ".join(context)}
+            {"role": "system", "content": " ".join(combined_context)}
         ]
         
         messages_without_context = [
@@ -583,9 +613,7 @@ async def handle_query(request: QueryRequest):
 
 
 
-
 if __name__ == "__main__":
-    # import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8005)
 
 
