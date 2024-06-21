@@ -35,8 +35,8 @@ import base64
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from pinecone import Pinecone, PodSpec
-#from sqlalchemy import create_engine
-#from sqlalchemy.orm import sessionmaker
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 
 import uvicorn
 from fastapi import FastAPI, HTTPException
