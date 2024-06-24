@@ -18,4 +18,5 @@ COPY . .
 EXPOSE 8005
 
 # Define the command to run your FastAPI application
-CMD ["python", "ivy_live.py"]
+CMD ["uvicorn", "ivy_live:app", "--host", "0.0.0.0", "--port", "8005", "--reload"]
+#CMD ["python", "ivy_live.py"]
