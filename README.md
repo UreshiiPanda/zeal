@@ -12,7 +12,7 @@
 
 
 <!-- RAG Gif -->
-![kanji go gif](https://github.com/UreshiiPanda/KanjiGo/assets/39992411/123d62bb-341e-4c6b-b192-941c51e6917d)
+![rag](https://github.com/UreshiiPanda/zeal/assets/39992411/abadfc87-d6e8-423e-9ae4-89ad8ebdecd5)
 
 
 
@@ -29,7 +29,8 @@ variables) from users, then generates an embedding of that query via OpenAI's em
 that are most-similar to the given embedding by routing it through Pinecone, and then re-routes this info through OpenAI's
 chat completion model in order to deliver all of this info (with the added context from RAG) back to the user in a human-
 palatable format that feels just like a usual LLM response, but with added, company-specific context. Further construction
-could include any SQL or NoSQL database for including an entire company-wide data-set into the added context.
+could include any SQL or NoSQL database for including an entire company-wide data-set into the added context. RAG-based
+chatbot responses were also returned alongside non-RAG (normal chatGPT 4) responses for comparison purposes.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -61,11 +62,13 @@ could include any SQL or NoSQL database for including an entire company-wide dat
         pinecone_api_key="place your API key here"
         openai_api_key="place your API key here"
       ```
-4. From that root directory, run docker compose:
+4. In the "ivy" directory, add a directory called "data" and add any data which you wish to be included (into the added context of your chatbot) into that directory:
+
+6. From that root directory, run docker compose:
     ```sh
         docker compose up
     ```
-5. To stop the app, stop docker compose from another terminal:
+7. To stop the app, stop docker compose from another terminal:
     ```sh
         docker compose down
     ```
