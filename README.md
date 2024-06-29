@@ -2,10 +2,9 @@
 
 #### An assorment of small programs featuring a RAG chatbot
 
-<br><br>
-
 #### Tech Stack:  Angular, Tailwind, FastAPI, C#
 
+<br><br>
 
 
 <a name="readme-top"></a>
